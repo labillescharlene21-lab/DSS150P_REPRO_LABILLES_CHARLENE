@@ -1,19 +1,27 @@
+# environment
 .venv/
 __pycache__/
 *.pyc
-.env
 .pytest_cache/
 .ipynb_checkpoints/
-# generated artifacts
+.env
+
+# generated data layers (rebuilt by the pipeline; the raw dataset is never committed)
 data/raw/*
 data/staging/*
 data/curated/*
 data/partitioned/*
 data/quarantine/*
 data/source/*
-outputs/model/*
-outputs/predictions.csv
 !**/.gitkeep
-# airflow / docker local state
+
+# generated artifacts that are NOT delivery evidence
+outputs/model/*
+outputs/curated_stroke.csv
+outputs/run_records/
+outputs/quality/
 logs/
 state/
+
+# optional test fixture derived from the dataset (commit it only if the dataset is redistributable)
+tests/fixtures/*.csv

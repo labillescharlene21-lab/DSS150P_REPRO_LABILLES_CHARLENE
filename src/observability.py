@@ -87,13 +87,16 @@ def _record_stage(run_id: str, stage: str, entry: dict) -> dict:
     entry["attempts"] = prev.get("attempts", 0) + 1
     rec["stages"][stage] = entry
     failed = [s for s, e in rec["stages"].items() if e["status"] == "failed"]
+    published = rec["stages"].get("publish", {}).get("status") == "success"
     if failed:
         rec["status"] = "failed"
-    elif stage == "publish" and entry["status"] == "success":
+        rec.pop("finished_at_utc", None)
+    elif published:                                  # derived from ALL stages, not just the latest one
         rec["status"] = "success"
-        rec["finished_at_utc"] = _now()
+        rec.setdefault("finished_at_utc", _now())
     else:
         rec["status"] = "running"
+        rec.pop("finished_at_utc", None)
     rec["failed_stages"] = failed
     tmp = p.with_suffix(".tmp")
     tmp.write_text(json.dumps(rec, indent=2, default=str), encoding="utf-8")

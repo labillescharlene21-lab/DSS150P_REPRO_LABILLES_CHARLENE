@@ -1,0 +1,33 @@
+{
+  "pipeline_run_id": "final-2",
+  "status": "fail",
+  "primary_metric": "roc_auc",
+  "expected": 0.75,
+  "actual": 0.7418348130212538,
+  "abs_difference": 0.008165186978746242,
+  "tolerance": 0.001,
+  "checks": {
+    "roc_auc_within_tolerance": false,
+    "test_rows_match": true,
+    "test_positive_match": true,
+    "test_ids_match": true,
+    "train_ids_match": true,
+    "no_train_test_overlap": true
+  },
+  "false_negative_differences": {
+    "0.35": {
+      "expected": 9,
+      "actual": 11
+    },
+    "0.4": {
+      "expected": 12,
+      "actual": 13
+    },
+    "0.5": {
+      "expected": 21,
+      "actual": 20
+    }
+  },
+  "seed_expected": 42,
+  "seed_actual": 42
+}

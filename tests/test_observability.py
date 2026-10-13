@@ -60,3 +60,9 @@ def test_library_log_lines_inherit_run_id_and_stage(sandbox):
     obs.run_stage("r4", "build-curated", work)
     line = [r for r in _lines(sandbox) if r["message"] == "inside a stage"][0]
     assert line["pipeline_run_id"] == "r4" and line["stage"] == "build-curated"
+
+
+def test_a_later_stage_after_publish_does_not_reset_the_run_status(sandbox):
+    obs.run_stage("r5", "publish", lambda: {})
+    obs.run_stage("r5", "run-all", lambda: {"stages_run": 10})
+    assert obs.load_run_record("r5")["status"] == "success"

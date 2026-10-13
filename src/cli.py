@@ -95,6 +95,35 @@ def _inject(a):
     return {}
 
 
+def _run_all(a):
+    """The whole pipeline, in DAG order, under ONE run id. Stops at the first failing stage."""
+    stages = [("ingest", _ingest), ("validate-raw", _validate_raw), ("transform-staging", _staging),
+              ("build-curated", _curated), ("load", _load), ("validate-curated", _validate_curated),
+              ("train", _train), ("evaluate", _evaluate), ("repro-check", _repro), ("publish", _publish)]
+    for name, fn in stages:
+        ns = argparse.Namespace(**vars(a))
+        ns.force, ns.fail_after, ns.cmd = not a.incremental, None, name
+        ok, res = run_stage(a.run_id, name, lambda fn=fn, ns=ns: fn(ns), logging.getLogger("cli"))
+        if not ok:
+            raise RuntimeError(f"stage '{name}' failed: {type(res).__name__}: {res}")
+    return {"stages_run": len(stages)}
+
+
+def _diagnose(a):
+    from src import diagnose
+    return diagnose.run_diagnosis()
+
+
+def _compare(a):
+    from src import report
+    return report.write_metrics_comparison()
+
+
+def _acceptance(a):
+    from src import acceptance
+    return acceptance.run_acceptance(only=a.only)
+
+
 def _benchmark(a):
     from src import benchmark
     benchmark.run_benchmark(repeats=a.repeats, scale=a.scale)
@@ -123,6 +152,8 @@ def build_parser() -> argparse.ArgumentParser:
     i = add("ingest", _ingest, common)
     i.add_argument("--force", action="store_true", help="full refresh")
     i.add_argument("--fail-after", type=int, help="simulate a crash after batch N")
+    ra = add("run-all", _run_all, common, seeded, help="run the whole pipeline in DAG order under one run id")
+    ra.add_argument("--incremental", action="store_true", help="skip batches already committed (default: full refresh)")
     add("verify-raw", _verify_raw, common)
     add("validate-raw", _validate_raw, common)
     add("transform", _transform, common, help="staging + curated in one go")
@@ -139,6 +170,10 @@ def build_parser() -> argparse.ArgumentParser:
     b = add("benchmark", _benchmark, common)
     b.add_argument("--repeats", type=int, help="warm repeats per measurement")
     b.add_argument("--scale", type=int, default=1, help="replicate rows N times (timing experiment only)")
+    add("diagnose", _diagnose, common, help="one-factor-at-a-time experiments: what moves the metric?")
+    add("compare", _compare, common, help="write docs/metrics_comparison.md (baseline vs reproduced)")
+    ac = add("acceptance", _acceptance, common, help="check the brief's acceptance tests A1-A18")
+    ac.add_argument("--only", help="run a single test, e.g. A7")
     ij = add("inject-failure", _inject, common, help="DEMO ONLY: corrupt one raw batch (reversible)")
     ij.add_argument("--kind", help="missing_column | duplicate_id | null_target | tamper_bmi | bad_glucose")
     ij.add_argument("--restore", action="store_true", help="put the original batch back")
