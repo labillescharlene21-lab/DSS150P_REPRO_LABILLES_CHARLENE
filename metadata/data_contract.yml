@@ -1,0 +1,19 @@
+dataset_id: stroke_prediction_risk
+checksum_sha256: "<paste from manifest>"
+target: stroke
+key:
+  type: row_hash        # or a real unique column if the profile found one
+columns:
+  age:               {type: float, nullable: false, min: 0, max: 120}
+  hypertension:      {type: int, nullable: false, allowed: [0, 1]}
+  heart_disease:     {type: int, nullable: false, allowed: [0, 1]}
+  avg_glucose_level: {type: float, nullable: false, min: 0}
+  bmi:               {type: float, nullable: false, min: 10, max: 100}
+  smoking_status:    {type: str, nullable: false}
+  stroke:            {type: int, nullable: false, allowed: [0, 1]}
+  # add the remaining columns (gender, residence type, etc.)
+on_violation:
+  schema: fail
+  row_level_invalid: quarantine
+  out_of_range: quarantine
+  null_target: fail
