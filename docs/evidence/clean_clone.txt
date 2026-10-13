@@ -1,0 +1,78 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20261013200331
+Username: DESKTOP-K699L4V\Charlene
+RunAs User: DESKTOP-K699L4V\Charlene
+Configuration Name: 
+Machine: DESKTOP-K699L4V (Microsoft Windows NT 10.0.19045.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File scripts\clean_clone_check.ps1
+Process ID: 23940
+PSVersion: 5.1.19041.6456
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.19041.6456
+BuildVersion: 10.0.19041.6456
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+== 1. clean clone into C:\Users\Charlene\AppData\Local\Temp\dss150p_clean_clone
+
+58ec309 docs: add lineage, runbook, and reproducibility report
+1bd2917 test: add data quality checks, structured logging, and failure injection
+d11f869 feat: orchestrate pipeline with Airflow
+58f436d feat: add validation, training, evaluation, and publish stages
+ee31e0b feat: add storage benchmark and partition workflow
+5bbfb4c feat: add PostgreSQL schema and rerun-safe load
+860f158 chore: add Dockerfile and compose with postgres healthcheck
+05f2f9d feat: add staging and curated transformations
+34c4ea8 feat: implement full and incremental raw ingestion
+6da798b docs: add source profile, manifest, and data contract
+4a681e7 docs: add source profile, manifest, and data contract
+57b801f chore: initialize reproducible DSS150P repository
+b3875fc Initial commit
+== 2. secrets are not in the clone
+== 3. place the dataset and verify its checksum against the manifest
+checksum OK: 644d473b05d2797006bd94865e4f8bb057f0c721617911613c82c8fcfc707420
+== 4. .env from the example, only the host port changes
+== 5. build and start PostgreSQL; wait for the healthcheck
+
+
+== 6. full pipeline, then a second (incremental) run
+
+
+== 7. no duplicate logical records
+
+== 8. baseline vs reproduced, then the tests inside the container
+
+# Baseline vs reproduced results (auto-generated)
+
+Run: `final-2` | status: **fail** | tolerance: 0.001
+
+| Quantity | Baseline (expected) | Reproduced (actual) | Result |
+|---|---:|---:|---|
+| ROC-AUC (primary) | 0.7500 | 0.74183 | diff 0.008165, within tolerance: False |
+| Train rows | 2612 | 2612 | match |
+| Test rows | 653 | 653 | match |
+| Test positives | 63 | 63 | match |
+| scale_pos_weight | 12.2849 | 12.2849 | match |
+| Train ids SHA-256 | `76114297b55cb63d...` | `76114297b55cb63d...` | match |
+| Test ids SHA-256 | `65394bd0562ee1b8...` | `65394bd0562ee1b8...` | match |
+
+
+CLEAN CLONE OK
+
+>> TerminatingError(docker.exe): "The running command stopped because the preference variable "ErrorActionPreference" or common parameter is set to Stop:  Container dss150p_cleanclone-postgres-1 Stopping "
+>> TerminatingError(docker.exe): "The running command stopped because the preference variable "ErrorActionPreference" or common parameter is set to Stop:  Container dss150p_cleanclone-postgres-1 Stopping "
+The running command stopped because the preference variable "ErrorActionPreference" or common parameter is set to Stop:  Container dss150p_cleanclone-postgres-1 Stopping
+docker :  Container dss150p_cleanclone-postgres-1 Stopping
+At C:\Users\Charlene\projects\DSS150P_REPRO_LABILLES_CHARLENE\scripts\clean_clone_check.ps1:78 char:5
++     docker compose -p dss150p_cleanclone -f (Join-Path $work "docker- ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ( Container dss1...res-1 Stopping :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+**********************
+Windows PowerShell transcript end
+End time: 20261013200521
+**********************
