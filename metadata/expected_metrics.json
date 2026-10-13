@@ -1,8 +1,11 @@
 {
   "model": "XGBoost, hybrid features (13) incl. VAAF and TGI",
   "primary_metric": "roc_auc",
-  "roc_auc": 0.7500,
+  "roc_auc": 0.75,
   "tolerance": 0.001,
+  "reference_platform": "Linux",
+  "tolerance_non_reference_platform": 0.01,
+  "tolerance_rule": "Strict tolerance on the reference platform (Linux: the baseline came from Google Colab and the Docker image is Linux). On other platforms the XGBoost build is not bit-identical, so the primary metric may differ by up to 0.01 (the brief's recommended maximum). Split identity checks stay exact everywhere.",
   "seed": 42,
   "curated_rows": 3265,
   "train_rows": 2612,
@@ -10,13 +13,30 @@
   "test_positive": 63,
   "train_ids_sha256": "76114297b55cb63d1de647d007f453f9776dc1e4ec79104aedefc0a837f9fff8",
   "test_ids_sha256": "65394bd0562ee1b829e8b7d36b637fd56ca009b92a35291cdb848416bd576832",
-  "false_negatives_by_threshold": {"0.05": 0, "0.075": 1, "0.2": 6, "0.35": 9, "0.4": 12, "0.45": 17, "0.5": 21},
-  "split": {"test_size": 0.2, "random_state": 42, "stratify": false},
+  "false_negatives_by_threshold": {
+    "0.05": 0,
+    "0.075": 1,
+    "0.2": 6,
+    "0.35": 9,
+    "0.4": 12,
+    "0.45": 17,
+    "0.5": 21
+  },
+  "split": {
+    "test_size": 0.2,
+    "random_state": 42,
+    "stratify": false
+  },
   "scale_pos_weight": 12.2849,
   "scale_pos_weight_origin": "train counts of an earlier 0.30 stratified split (2113 neg / 172 pos)",
   "hyperparameters": {
-    "n_estimators": 250, "learning_rate": 0.02, "max_depth": 2,
-    "subsample": 0.7, "colsample_bytree": 0.7, "eval_metric": "logloss", "random_state": 42
+    "n_estimators": 250,
+    "learning_rate": 0.02,
+    "max_depth": 2,
+    "subsample": 0.7,
+    "colsample_bytree": 0.7,
+    "eval_metric": "logloss",
+    "random_state": 42
   },
   "source": "NEWCOLUMNS_StrokeRiskPrediction_XGBOOST_MODELING.ipynb; ids hashes derived by applying the notebook's split to the group's Engineered2.csv"
 }

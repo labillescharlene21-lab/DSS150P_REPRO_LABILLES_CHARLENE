@@ -1,8 +1,8 @@
 {
-  "generated_at_utc": "2026-10-13T12:02:34+00:00",
+  "generated_at_utc": "2026-10-13T12:13:34+00:00",
   "tolerance": 0.001,
   "baseline_auc": 0.75,
-  "control_auc": 0.74183,
+  "control_auc": 0.74653,
   "data_identity": {
     "curated_rows": 3265,
     "identical_to_group_engineered_file": true,
@@ -12,85 +12,85 @@
     {
       "factor": "control",
       "change": "Reproduced configuration (seed 42, notebook split, notebook hyperparameters)",
-      "auc": 0.74183,
+      "auc": 0.74653,
       "delta_vs_control": 0.0,
       "exceeds_tolerance": false
     },
     {
       "factor": "seed",
       "change": "model random_state 7 (split unchanged)",
-      "auc": 0.74124,
-      "delta_vs_control": -0.00059,
-      "exceeds_tolerance": false
+      "auc": 0.74062,
+      "delta_vs_control": -0.00591,
+      "exceeds_tolerance": true
     },
     {
       "factor": "seed",
       "change": "split random_state 7 (model seed unchanged)",
-      "auc": 0.76495,
-      "delta_vs_control": 0.02311,
+      "auc": 0.7614,
+      "delta_vs_control": 0.01487,
       "exceeds_tolerance": true
     },
     {
       "factor": "split",
       "change": "final split stratified by target (baseline was NOT)",
-      "auc": 0.67431,
-      "delta_vs_control": -0.06752,
+      "auc": 0.68276,
+      "delta_vs_control": -0.06377,
       "exceeds_tolerance": true
     },
     {
       "factor": "split",
       "change": "rows sorted by id before the split instead of source order",
-      "auc": 0.76118,
-      "delta_vs_control": 0.01935,
+      "auc": 0.75946,
+      "delta_vs_control": 0.01293,
       "exceeds_tolerance": true
     },
     {
       "factor": "preprocessing",
       "change": "scale_pos_weight from the final train set instead of the earlier 0.30 split",
-      "auc": 0.74025,
-      "delta_vs_control": -0.00159,
+      "auc": 0.74509,
+      "delta_vs_control": -0.00144,
       "exceeds_tolerance": true
     },
     {
       "factor": "preprocessing",
       "change": "scale_pos_weight = 1",
-      "auc": 0.76166,
-      "delta_vs_control": 0.01983,
+      "auc": 0.76441,
+      "delta_vs_control": 0.01788,
       "exceeds_tolerance": true
     },
     {
       "factor": "hyperparameters",
       "change": "n_estimators 183, learning_rate 0.029 (paper's Model 2 values)",
-      "auc": 0.74318,
-      "delta_vs_control": 0.00135,
+      "auc": 0.73791,
+      "delta_vs_control": -0.00862,
       "exceeds_tolerance": true
     },
     {
       "factor": "hyperparameters",
       "change": "max_depth 3 instead of 2",
-      "auc": 0.71945,
-      "delta_vs_control": -0.02238,
+      "auc": 0.72914,
+      "delta_vs_control": -0.01739,
       "exceeds_tolerance": true
     },
     {
       "factor": "features",
       "change": "model without the two engineered features (11 features)",
-      "auc": 0.75125,
-      "delta_vs_control": 0.00942,
+      "auc": 0.7548,
+      "delta_vs_control": 0.00827,
       "exceeds_tolerance": true
     }
   ],
   "variability": {
     "split_seed_sweep": {
       "seeds": "0-19 (split and model seed equal)",
-      "mean": 0.7612,
-      "std": 0.0377,
-      "min": 0.7015,
-      "max": 0.8301
+      "mean": 0.7609,
+      "std": 0.0383,
+      "min": 0.6971,
+      "max": 0.8329
     },
     "bootstrap_95ci_on_baseline_test_set": [
-      0.6771,
-      0.807
+      0.6808,
+      0.8133
     ],
     "test_positives": 63,
     "test_rows": 653
@@ -99,7 +99,8 @@
     "python": "3.12.4",
     "xgboost": "3.4.1",
     "scikit_learn": "1.9.1",
-    "pandas": "3.0.6"
+    "pandas": "3.0.6",
+    "platform": "Windows AMD64"
   },
   "library_note": "Library version cannot be varied inside one process. Measured separately: xgboost 2.1.4 to 3.2.0 give AUC 0.75087; xgboost >= 3.3.0 gives 0.75004 on identical data, split and parameters (scikit-learn 1.7.2 vs 1.8.0 made no difference)."
 }

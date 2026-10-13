@@ -82,6 +82,7 @@ Each experiment changes exactly one factor from the reproduced configuration (fu
 | Hyperparameters | paper's table values: -0.001; depth 3: -0.020 | `settings.yml` |
 | Feature set | dropping VAAF and TGI: +0.004 | feature list |
 | Library | xgboost 2.1.4 to 3.2.0: 0.75087; 3.3.0 and later: 0.75004 (scikit-learn 1.7.2 vs 1.8.0: no effect) | pinned in `requirements.txt` |
+| Platform / build | Windows 0.74653 (1 thread), 0.74119 to 0.74183 (2 to 4 threads) vs Linux 0.75004 | Docker (Linux) as the reference environment; `n_jobs: 1`; platform-aware tolerance |
 
 **Diagnosis procedure if a future run differs:** (1) data identity and split hashes, then (2) preprocessing,
 (3) split, (4) hyperparameters, (5) seeds, (6) library versions, (7) platform and threads. The first factor that
@@ -110,7 +111,13 @@ moves the metric by more than the tolerance is the cause.
   these two features improve discrimination. A fair comparison needs repeated or cross-validated splits.
 - **Mild preprocessing leakage.** BMI median imputation uses all rows before the split. It is kept to reproduce the
   baseline; a leakage-free version would fit the median on the training set only.
-- **Environment sensitivity.** The result depends on the XGBoost version (see section 6). Bit-for-bit equality
+- **Platform sensitivity (measured).** With identical data, identical split rows (id hashes match) and identical
+  parameters, the same XGBoost 3.4.1 gives AUC 0.75004 on Linux at every thread count, but on Windows 10 (AMD64,
+  Python 3.12.4, 4 cores) it gives 0.74653 with 1 thread, 0.74119 with 2 and 0.74183 with 4 or the default.
+  The baseline came from Google Colab (Linux). I did not investigate the mechanism; the Windows and Linux builds
+  are not bit-identical. Therefore: the Linux Docker image is the reference environment and must match within
+  0.001; other platforms are allowed up to 0.01 (the brief's recommended maximum), are reported as
+  `pass_relaxed_tolerance`, and never relax the exact split checks. The thread count is pinned (`n_jobs: 1`).
   across CPU architectures and operating systems was not verified.
 - **Static dataset.** Incremental ingestion is a laboratory simulation over fixed-order batches, not a business watermark.
 - **Deployment scope.** Airflow runs in single-container `standalone` mode with no login; PostgreSQL loading in the
@@ -145,5 +152,4 @@ docker compose run --rm pipeline python -m src.cli acceptance
 
 ## 11. AI assistance
 
-Claude (Anthropic) assisted with guidance, code drafting, debugging and documentation drafting. All code was
-reviewed, executed and tested by me, and I can explain the implementation, failure behavior and design choices.
+Claude (Anthropic) assisted with guidance, code drafting, debugging and grammar correction/refinement. All code was reviewed, executed and tested by me, and I can explain the implementation, failure behavior and design choices.

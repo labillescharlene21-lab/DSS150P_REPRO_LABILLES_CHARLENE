@@ -111,7 +111,8 @@ def run_diagnosis() -> dict:
         "tolerance": tol, "baseline_auc": expected["roc_auc"], "control_auc": round(control, 5),
         "data_identity": identity, "experiments": table, "variability": variability,
         "library_versions": {"python": platform.python_version(), "xgboost": xgboost.__version__,
-                             "scikit_learn": sklearn.__version__, "pandas": pd.__version__},
+                             "scikit_learn": sklearn.__version__, "pandas": pd.__version__,
+                             "platform": f"{platform.system()} {platform.machine()}"},
         "library_note": ("Library version cannot be varied inside one process. Measured separately: "
                          "xgboost 2.1.4 to 3.2.0 give AUC 0.75087; xgboost >= 3.3.0 gives 0.75004 on identical data, "
                          "split and parameters (scikit-learn 1.7.2 vs 1.8.0 made no difference)."),
@@ -146,7 +147,9 @@ def render_diagnosis(r: dict) -> str:
           "dataset. Reproducing 0.7500 therefore depends on reproducing the exact split, which the split manifest hashes verify."]
     v = r["library_versions"]
     L += ["", "## Step 4: library versions", "", f"This run: Python {v['python']}, xgboost {v['xgboost']}, "
-          f"scikit-learn {v['scikit_learn']}, pandas {v['pandas']}.", "", r["library_note"], "",
+          f"scikit-learn {v['scikit_learn']}, pandas {v['pandas']}, platform {v.get('platform', 'unknown')}.", "", r["library_note"],
+          "Platform also matters: the same data, split and parameters gave a different AUC on Windows than on Linux "
+          "(see docs/reproducibility_report.md). The Linux Docker image is the reference environment.", "",
           "## How to read this", "",
           "1. Data identity true and split hashes matching means any metric difference is NOT the data or the split rows.",
           "2. A factor with `exceeds tolerance = yes` must be pinned or documented, otherwise it can silently change the result.",

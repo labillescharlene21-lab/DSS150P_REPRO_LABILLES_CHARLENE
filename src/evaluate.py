@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import platform
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -63,6 +64,23 @@ def evaluate_model(seed: int | None = None, run_id: str | None = None) -> dict:
     return metrics
 
 
+def tolerance_for_platform(expected: dict, system: str) -> tuple[float, float, str]:
+    """(strict, applicable, kind). Strict on the reference platform, the declared relaxed limit elsewhere."""
+    strict = expected["tolerance"]
+    reference = expected.get("reference_platform")
+    if reference is None or system == reference:
+        return strict, strict, "reference"
+    return strict, expected.get("tolerance_non_reference_platform", strict), "non_reference"
+
+
+def judge_status(diff: float, baseline_seed: bool, other_checks_ok: bool, strict: float, applicable: float) -> str:
+    if not baseline_seed:                 # a different seed is a legitimate experiment, not a failure
+        return "not_applicable_non_baseline_seed"
+    if not other_checks_ok or diff > applicable:
+        return "fail"
+    return "pass" if diff <= strict else "pass_relaxed_tolerance"
+
+
 def reproducibility_check(run_id: str | None = None) -> dict:
     """Compare actual vs expected, write a machine-readable side-by-side, fail if outside tolerance."""
     s = load_settings()
@@ -70,35 +88,38 @@ def reproducibility_check(run_id: str | None = None) -> dict:
     expected = json.loads((ROOT / "metadata" / "expected_metrics.json").read_text(encoding="utf-8"))
     actual = json.loads((out / "metrics.json").read_text(encoding="utf-8"))
     manifest = json.loads((ROOT / "metadata" / "split_manifest.json").read_text(encoding="utf-8"))
-    tol = expected["tolerance"]
+    system = platform.system()
+    strict, applicable, kind = tolerance_for_platform(expected, system)
 
     baseline_seed = actual["seed"] == expected["seed"]
     diff = abs(actual["roc_auc"] - expected["roc_auc"])
-    checks = {
-        "roc_auc_within_tolerance": baseline_seed and diff <= tol,
+    exact_checks = {
         "test_rows_match": actual["test_rows"] == expected["test_rows"],
         "test_positive_match": actual["test_positive"] == expected["test_positive"],
         "test_ids_match": manifest["test_ids_sha256"] == expected["test_ids_sha256"],
         "train_ids_match": manifest["train_ids_sha256"] == expected["train_ids_sha256"],
         "no_train_test_overlap": manifest["train_test_overlap"] == 0,
     }
+    checks = {"roc_auc_within_tolerance": baseline_seed and diff <= applicable, **exact_checks}
     fn_actual = {str(r["threshold"]): r["false_negatives"] for r in actual["threshold_table"]}
     fn_diff = {k: {"expected": v, "actual": fn_actual.get(k)} for k, v in expected["false_negatives_by_threshold"].items()
                if fn_actual.get(k) != v}
 
-    if not baseline_seed:                           # a different seed is a legitimate experiment, not a failure
-        status = "not_applicable_non_baseline_seed"
-    else:
-        status = "pass" if all(checks.values()) else "fail"
-
+    status = judge_status(diff, baseline_seed, all(exact_checks.values()), strict, applicable)
     result = {
         "pipeline_run_id": run_id, "status": status, "primary_metric": "roc_auc",
-        "expected": expected["roc_auc"], "actual": actual["roc_auc"], "abs_difference": diff, "tolerance": tol,
+        "expected": expected["roc_auc"], "actual": actual["roc_auc"], "abs_difference": diff,
+        "tolerance": applicable, "tolerance_strict": strict, "tolerance_kind": kind,
+        "platform": system, "reference_platform": expected.get("reference_platform"),
         "checks": checks, "false_negative_differences": fn_diff,
         "seed_expected": expected["seed"], "seed_actual": actual["seed"],
     }
     (out / "reproducibility_check.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
-    log.info("run=%s reproducibility %s (diff=%.6f, tol=%s)", run_id, status, diff, tol)
+    log.info("run=%s reproducibility %s (diff=%.6f, tolerance=%s on %s)", run_id, status, diff, applicable, system)
+    if status == "pass_relaxed_tolerance":
+        log.warning("run=%s AUC differs from the baseline by %.5f: within the %s limit allowed on %s, but not the strict %s "
+                    "required on the reference platform (%s). Use the Docker image for the authoritative result.",
+                    run_id, diff, applicable, system, strict, expected.get("reference_platform"))
     if status == "fail":
-        raise RuntimeError(f"Reproducibility check failed: {result['checks']} diff={diff:.6f} tol={tol}")
+        raise RuntimeError(f"Reproducibility check failed: {checks} diff={diff:.6f} tolerance={applicable} ({system})")
     return result

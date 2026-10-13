@@ -261,8 +261,13 @@ def a17():
     if not p.exists():
         return "fail", "reproducibility_check.json missing"
     r = json.loads(p.read_text(encoding="utf-8"))
-    ok = r["status"] == "pass"
-    return ("pass" if ok else "fail"), f"status {r['status']}: AUC {r['actual']:.5f} vs {r['expected']} (diff {r['abs_difference']:.6f}, tolerance {r['tolerance']})"
+    ok = r["status"] in ("pass", "pass_relaxed_tolerance")
+    note = ""
+    if r["status"] == "pass_relaxed_tolerance":
+        note = (f" [{r.get('platform')} is not the reference platform {r.get('reference_platform')}: relaxed limit "
+                f"{r['tolerance']} applied; the Docker run is the authoritative one]")
+    return ("pass" if ok else "fail"), (f"status {r['status']}: AUC {r['actual']:.5f} vs {r['expected']} "
+                                        f"(diff {r['abs_difference']:.6f}, tolerance {r['tolerance']}){note}")
 
 
 def a18():
