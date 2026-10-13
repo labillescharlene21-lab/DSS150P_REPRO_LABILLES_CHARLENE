@@ -25,3 +25,7 @@ modeling:
   test_size: 0.20
   stratify: false
   tolerance: 0.001
+
+transform:
+  age_min: 35
+  age_max: 90
