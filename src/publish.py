@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from src.config import ROOT, load_settings
+from src.observability import load_run_record
 from src.transform import CURATED_FILE, STAGING_FILE, load_raw
 
 log = logging.getLogger("publish")
@@ -29,6 +30,11 @@ def publish_outputs(run_id: str | None = None) -> dict:
     shutil.copyfile(curated_src, out / "curated_stroke.csv")          # the published data product
 
     reject = s.path("quarantine_dir") / "rejected_rows.csv"
+    record = (load_run_record(run_id) if run_id else None) or {}
+    quality_dir = out / "quality"
+    quality = {p.stem: {k: v for k, v in json.loads(p.read_text(encoding="utf-8")).items()
+                        if k.endswith(("_checks", "_failed", "_warned"))}
+               for p in sorted(quality_dir.glob("*.json"))} if quality_dir.exists() else {}
     summary = {
         "pipeline_run_id": run_id, "status": "success",
         "finished_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -40,6 +46,9 @@ def publish_outputs(run_id: str | None = None) -> dict:
             "train": manifest["train_rows"], "test": manifest["test_rows"],
             "predictions": len(pd.read_csv(out / "predictions.csv")),
         },
+        "stages": {k: {"status": v["status"], "duration_s": v.get("duration_s"), "attempts": v.get("attempts")}
+                   for k, v in record.get("stages", {}).items()},
+        "quality": quality,
         "reproducibility": {k: repro[k] for k in ("status", "expected", "actual", "abs_difference", "tolerance")},
         "published_files": {f: _sha256(out / f) for f in
                             ("curated_stroke.csv", "metrics.json", "predictions.csv", "reproducibility_check.json")},

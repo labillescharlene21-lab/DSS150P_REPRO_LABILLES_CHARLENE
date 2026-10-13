@@ -41,3 +41,8 @@ storage:
   benchmark_repeats: 5
   formats_dir: data/curated/formats
   partition_dir: data/partitioned/stroke_curated
+quality:
+  max_null_rate: {default: 0.0, bmi: 0.05}   # raw layer; bmi nulls are imputed in staging
+  class_balance_tolerance: 0.01              # allowed absolute drift of the stroke rate vs baseline
+  fingerprint_rel_tol: 1.0e-6                # feature means/stds vs baseline fingerprint
+  max_abs_feature_target_corr: 0.9           # leakage heuristic

@@ -14,6 +14,7 @@ import xgboost
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 
+from src import quality
 from src.config import ROOT, load_settings
 from src.transform import CURATED_FILE
 
@@ -83,8 +84,9 @@ def train_model(seed: int | None = None, run_id: str | None = None) -> dict:
     }, indent=2, default=float), encoding="utf-8")
 
     manifest = split_manifest(df, X_tr, X_te, y_te, spw, seed, run_id)
-    if manifest["train_test_overlap"]:
-        raise RuntimeError("Train/test overlap detected")
+    split_report = quality.check_split(manifest, len(df))
+    split_report.write(run_id)
+    split_report.raise_if_failed("train split")
     (ROOT / "metadata" / "split_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     log.info("run=%s trained seed=%d train=%d test=%d spw=%.4f", run_id, seed, len(X_tr), len(X_te), spw)
     return manifest

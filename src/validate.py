@@ -1,4 +1,4 @@
-"""Data-quality gates used by the pipeline. (Milestone 08 extends these with more checks.)"""
+"""Stage entry points for the quality gates (DAG tasks validate_raw and validate_curated)."""
 from __future__ import annotations
 
 import json
@@ -8,83 +8,48 @@ import pandas as pd
 import yaml
 from sqlalchemy import text
 
+from src import quality
 from src.config import ROOT, load_settings
-from src.transform import CURATED_COLS, CURATED_FILE, load_contract, load_raw
+from src.quality import ValidationError  # noqa: F401  (re-exported for callers and tests)
+from src.transform import CURATED_FILE, load_contract, load_raw
 
 log = logging.getLogger("validate")
 
 
-class ValidationError(RuntimeError):
-    """Raised when a data-quality gate fails. The CLI turns this into a non-zero exit."""
+def _json(name: str) -> dict:
+    return json.loads((ROOT / "metadata" / name).read_text(encoding="utf-8"))
 
 
-def _fail(failures: list[str], label: str) -> None:
-    if failures:
-        raise ValidationError(f"{label} failed: " + "; ".join(failures))
-
-
-def validate_raw() -> dict:
+def validate_raw(run_id: str | None = None) -> dict:
     s = load_settings()
     manifest = yaml.safe_load((ROOT / "metadata" / "source_manifest.yml").read_text(encoding="utf-8"))
-    contract = load_contract()
     raw = load_raw(s.path("raw_dir"))
-    key = contract["key"]["column"]
-    failures = []
-
-    missing = [c for c in contract["columns"] if c not in raw.columns]
-    if missing:
-        failures.append(f"missing columns {missing}")
-    if len(raw) != manifest["row_count"]:
-        failures.append(f"row count {len(raw)} != manifest {manifest['row_count']}")
-    if key in raw.columns and raw[key].duplicated().any():
-        failures.append(f"{int(raw[key].duplicated().sum())} duplicate {key}")
-    if raw["record_hash"].duplicated().any():
-        failures.append("duplicate record_hash")
-    bad_checksum = (raw["source_checksum"] != manifest["sha256"]).sum()
-    if bad_checksum:
-        failures.append(f"{int(bad_checksum)} rows carry a checksum different from source_manifest.yml")
-    _fail(failures, "validate_raw")
-
-    result = {"raw_rows": len(raw), "batches": int(raw["batch_no"].nunique())}
-    log.info("validate_raw OK %s", result)
-    return result
+    report = quality.check_raw(raw, manifest, load_contract(), s.source_file, s.raw)
+    report.write(run_id)
+    report.raise_if_failed("validate_raw")
+    return {"raw_rows": len(raw), "batches": int(raw["batch_no"].nunique()), **report.summary()}
 
 
-def validate_curated() -> dict:
+def validate_curated(run_id: str | None = None) -> dict:
     s = load_settings()
-    expected = json.loads((ROOT / "metadata" / "expected_metrics.json").read_text(encoding="utf-8"))
+    expected, fingerprint = _json("expected_metrics.json"), _json("feature_fingerprint.json")
     cur = pd.read_csv(s.path("curated_dir") / CURATED_FILE)
-    features = s.raw["modeling"]["features"]
-    target = s.raw["source"]["target"]
-    failures = []
+    features, target = s.raw["modeling"]["features"], s.raw["source"]["target"]
 
-    if list(cur.columns) != CURATED_COLS:
-        failures.append("curated column set/order changed")
-    if len(cur) != expected["curated_rows"]:
-        failures.append(f"curated rows {len(cur)} != expected {expected['curated_rows']}")
-    if cur["id"].duplicated().any():
-        failures.append("duplicate id in curated")
-    if not cur["source_row_seq"].is_monotonic_increasing:
-        failures.append("curated is not in source order (would change the train/test split)")
-    nulls = cur[features + [target]].isna().sum()
-    if nulls.any():
-        failures.append(f"nulls in model columns: {nulls[nulls > 0].to_dict()}")
-    if not set(cur[target].unique()) <= {0, 1}:
-        failures.append("target is not binary")
-    if target in features or "id" in features:
-        failures.append("target/identifier present in feature list (leakage)")
+    report = quality.check_curated(cur, features, target, expected, fingerprint, s.raw)
+    report.checks += quality.check_predictive_inputs(cur, features, target, fingerprint, s.raw).checks
+    for c in report.checks:                       # one combined report for the curated gate
+        c.layer = "curated"
 
-    # Postgres must agree with the curated file
-    try:
+    try:                                          # PostgreSQL must agree with the curated file
         from src.storage import get_engine
         with get_engine().connect() as conn:
             n_db = conn.execute(text("SELECT COUNT(*) FROM curated_stroke")).scalar()
-        if n_db != len(cur):
-            failures.append(f"PostgreSQL has {n_db} curated rows, file has {len(cur)}")
-    except Exception as e:
-        failures.append(f"PostgreSQL unreachable: {type(e).__name__}")
-    _fail(failures, "validate_curated")
+        report.add("consistency_postgres_row_count_matches_file", "consistency", n_db == len(cur),
+                   f"PostgreSQL has {n_db} curated rows, file has {len(cur)}")
+    except Exception as e:                        # noqa: BLE001
+        report.add("consistency_postgres_reachable", "consistency", False, f"{type(e).__name__}: {e}")
 
-    result = {"curated_rows": len(cur), "stroke_positive": int(cur[target].sum())}
-    log.info("validate_curated OK %s", result)
-    return result
+    report.write(run_id)
+    report.raise_if_failed("validate_curated")
+    return {"curated_rows": len(cur), "stroke_positive": int(cur[target].sum()), **report.summary()}

@@ -10,6 +10,7 @@ from sklearn.metrics import accuracy_score, recall_score, roc_auc_score
 from xgboost import XGBClassifier
 
 from src.config import ROOT, load_settings
+from src.quality import ValidationError
 from src.train import MODEL_FILE, ids_checksum, load_model_frame, make_split, seed_everything
 
 log = logging.getLogger("evaluate")
@@ -30,7 +31,10 @@ def evaluate_model(seed: int | None = None, run_id: str | None = None) -> dict:
 
     model = XGBClassifier()
     model.load_model(out / "model" / MODEL_FILE)
-    prob = model.predict_proba(X_te[model.get_booster().feature_names])[:, 1]
+    feats = model.get_booster().feature_names
+    if feats != s.raw["modeling"]["features"]:
+        raise ValidationError(f"Model was trained on {feats}, configured features are {s.raw['modeling']['features']}")
+    prob = model.predict_proba(X_te[feats])[:, 1]
 
     thresholds = s.raw["modeling"]["thresholds"]
     table = []

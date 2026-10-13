@@ -1,0 +1,85 @@
+{
+  "description": "Per-feature summary of the baseline model input (group's Engineered2.csv). Used to detect silent changes to the data that keep schema and ranges valid.",
+  "rows": 3265,
+  "stroke_rate": 0.07534456355283307,
+  "features": {
+    "age": {
+      "mean": 57.4284839204,
+      "std": 13.4927761968,
+      "min": 35.0,
+      "max": 82.0
+    },
+    "age_score_risk": {
+      "mean": 0.544869831547,
+      "std": 0.498058906691,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "avg_glucose_level": {
+      "mean": 112.944070444,
+      "std": 51.294053691,
+      "min": 55.22,
+      "max": 271.74
+    },
+    "glucose_score_risk": {
+      "mean": 0.343644716692,
+      "std": 0.691428310839,
+      "min": 0.0,
+      "max": 2.0
+    },
+    "bmi": {
+      "mean": 30.8455130168,
+      "std": 6.88988443935,
+      "min": 11.3,
+      "max": 92.0
+    },
+    "bmi_score_risk": {
+      "mean": 0.914854517611,
+      "std": 0.27914081452,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "hypertension": {
+      "mean": 0.146707503828,
+      "std": 0.35386828795,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "heart_disease": {
+      "mean": 0.0836140888208,
+      "std": 0.276850588018,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "gender_score_risk": {
+      "mean": 0.408269525268,
+      "std": 0.491588786667,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "smoking_score_risk": {
+      "mean": 1.17702909648,
+      "std": 1.14185054457,
+      "min": 0.0,
+      "max": 3.0
+    },
+    "residence_score_risk": {
+      "mean": 1.50934150077,
+      "std": 0.499989302651,
+      "min": 1.0,
+      "max": 2.0
+    },
+    "VAAF": {
+      "mean": 2.38254211332,
+      "std": 10.3914971147,
+      "min": -25.0,
+      "max": 34.0
+    },
+    "TGI": {
+      "mean": 3541.26102665,
+      "std": 1995.46465806,
+      "min": 701.04,
+      "max": 15133.512
+    }
+  }
+}

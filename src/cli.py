@@ -3,23 +3,17 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+import uuid
 
-from src.config import ROOT
-
-
-def _logging():
-    (ROOT / "logs").mkdir(exist_ok=True)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-        handlers=[logging.StreamHandler(sys.stdout),
-                  logging.FileHandler(ROOT / "logs" / "pipeline.log", encoding="utf-8")],
-    )
+from src.observability import run_stage, setup_logging
 
 
 def _ingest(a):
     from src import ingest
+    from src.config import load_settings
+    from src.transform import load_raw
     ingest.ingest(force=a.force, fail_after=a.fail_after, run_id=a.run_id)
+    return {"raw_rows": len(load_raw(load_settings().path("raw_dir")))}
 
 
 def _verify_raw(a):
@@ -29,17 +23,17 @@ def _verify_raw(a):
 
 def _transform(a):
     from src import transform
-    transform.run_transform(run_id=a.run_id)
+    return transform.run_transform(run_id=a.run_id)
 
 
 def _staging(a):
     from src import transform
-    transform.run_staging(run_id=a.run_id)
+    return transform.run_staging(run_id=a.run_id)
 
 
 def _curated(a):
     from src import transform
-    transform.run_curated(run_id=a.run_id)
+    return transform.run_curated(run_id=a.run_id)
 
 
 def _init_db(a):
@@ -49,42 +43,56 @@ def _init_db(a):
 
 def _load(a):
     from src import storage
-    storage.load_postgres(run_id=a.run_id)
+    return storage.load_postgres(run_id=a.run_id)
 
 
 def _verify_db(a):
     from src import storage
-    storage.verify_db()
+    return storage.verify_db()
 
 
 def _validate_raw(a):
     from src import validate
-    validate.validate_raw()
+    return validate.validate_raw(run_id=a.run_id)
 
 
 def _validate_curated(a):
     from src import validate
-    validate.validate_curated()
+    return validate.validate_curated(run_id=a.run_id)
 
 
 def _train(a):
     from src import train
-    train.train_model(seed=a.seed, run_id=a.run_id)
+    return train.train_model(seed=a.seed, run_id=a.run_id)
 
 
 def _evaluate(a):
     from src import evaluate
-    evaluate.evaluate_model(seed=a.seed, run_id=a.run_id)
+    return evaluate.evaluate_model(seed=a.seed, run_id=a.run_id)
 
 
 def _repro(a):
     from src import evaluate
-    evaluate.reproducibility_check(run_id=a.run_id)
+    return evaluate.reproducibility_check(run_id=a.run_id)
 
 
 def _publish(a):
     from src import publish
-    publish.publish_outputs(run_id=a.run_id)
+    return publish.publish_outputs(run_id=a.run_id)
+
+
+def _inject(a):
+    from src import inject
+    log = logging.getLogger("inject")
+    if a.restore:
+        result = inject.restore()
+        log.warning("RESTORED: %s", result)
+        return {}
+    if not a.kind:
+        raise ValueError(f"choose --kind from {inject.KINDS} or use --restore")
+    result = inject.inject_fault(a.kind)
+    log.warning("INJECTED FAULT (demo only): %s", result)
+    return {}
 
 
 def _benchmark(a):
@@ -131,6 +139,9 @@ def build_parser() -> argparse.ArgumentParser:
     b = add("benchmark", _benchmark, common)
     b.add_argument("--repeats", type=int, help="warm repeats per measurement")
     b.add_argument("--scale", type=int, default=1, help="replicate rows N times (timing experiment only)")
+    ij = add("inject-failure", _inject, common, help="DEMO ONLY: corrupt one raw batch (reversible)")
+    ij.add_argument("--kind", help="missing_column | duplicate_id | null_target | tamper_bmi | bad_glucose")
+    ij.add_argument("--restore", action="store_true", help="put the original batch back")
     pt = add("partition", _partition, common)
     pt.add_argument("--value", type=int, default=2, help="partition value to load and verify")
     return p
@@ -138,11 +149,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     a = build_parser().parse_args()
-    _logging()
-    try:
-        a.func(a)
-    except Exception as e:
-        logging.getLogger("cli").error("FAILED: %s: %s", type(e).__name__, e)
+    a.run_id = a.run_id or f"local-{uuid.uuid4().hex[:8]}"
+    setup_logging()
+    ok, result = run_stage(a.run_id, a.cmd, lambda: a.func(a), logging.getLogger("cli"))
+    if not ok:
+        logging.getLogger("cli").error("FAILED: %s: %s", type(result).__name__, result)
         return 1
     return 0
 
