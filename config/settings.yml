@@ -9,12 +9,19 @@ paths:
   quarantine_dir: data/quarantine
   metadata_dir: metadata
   outputs_dir: outputs
+  state_dir: state
+  logs_dir: logs
 
 source:
-  filename: stroke_data.csv      # rename to match your actual file
+  filename: Stroke_Prediction_Dataset.csv
   target: stroke
+  key: id
+
+ingestion:
+  n_batches: 3
 
 modeling:
-  random_seed: 42                # CHECK your group notebook's seed
-  test_size: 0.20                # 653 / 3265 in the paper
+  random_seed: 42
+  test_size: 0.20
+  stratify: false
   tolerance: 0.001

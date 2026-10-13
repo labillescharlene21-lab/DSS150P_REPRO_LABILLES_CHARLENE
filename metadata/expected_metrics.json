@@ -1,14 +1,20 @@
 {
-  "model": "XGBoost + TGI + VAAF (hybrid features)",
+  "model": "XGBoost, hybrid features (13) incl. VAAF and TGI",
   "primary_metric": "roc_auc",
   "roc_auc": 0.7500,
   "tolerance": 0.001,
   "test_rows": 653,
-  "test_positive": 49,
-  "source": "Abad, Labilles, Tumaneng - Predictive Analysis final paper, sec 3.1.4.3",
-  "hyperparameters_to_verify": {
-    "n_estimators": 183,
-    "learning_rate": 0.029,
-    "scale_pos_weight": 12.28
-  }
+  "test_positive": 63,
+  "split": {"test_size": 0.2, "random_state": 42, "stratify": false},
+  "scale_pos_weight": 12.2849,
+  "scale_pos_weight_origin": "train counts of an earlier 0.30 stratified split (2113 neg / 172 pos)",
+  "hyperparameters": {
+    "n_estimators": 250, "learning_rate": 0.02, "max_depth": 2,
+    "subsample": 0.7, "colsample_bytree": 0.7,
+    "eval_metric": "logloss", "random_state": 42
+  },
+  "features": ["age","age_score_risk","avg_glucose_level","glucose_score_risk","bmi","bmi_score_risk",
+               "hypertension","heart_disease","gender_score_risk","smoking_score_risk",
+               "residence_score_risk","VAAF","TGI"],
+  "source": "NEWCOLUMNS_StrokeRiskPrediction_XGBOOST_MODELING.ipynb"
 }

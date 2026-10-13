@@ -1,12 +1,12 @@
 dataset_id: stroke_prediction_risk
-filename: stroke_data.csv
-expected_path: data/source/stroke_data.csv
+filename: Stroke_Prediction_Dataset.csv
+expected_path: data/source/Stroke_Prediction_Dataset.csv
 sha256: 644d473b05d2797006bd94865e4f8bb057f0c721617911613c82c8fcfc707420
 size_bytes: 316971
 row_count: 5110
 column_count: 12
 encoding: utf-8
 format: csv
-profiled_at_utc: '2026-10-13T05:26:03+00:00'
+profiled_at_utc: '2026-10-13T05:35:03+00:00'
 license: 'TODO: state license / redistribution status'
 origin: 'TODO: URL or acquisition instructions'

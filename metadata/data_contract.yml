@@ -1,19 +1,23 @@
 dataset_id: stroke_prediction_risk
-checksum_sha256: "<paste from manifest>"
+checksum_sha256: "<paste from source_manifest.yml>"
 target: stroke
-key:
-  type: row_hash        # or a real unique column if the profile found one
+key: {column: id, unique: true}
 columns:
-  age:               {type: float, nullable: false, min: 0, max: 120}
-  hypertension:      {type: int, nullable: false, allowed: [0, 1]}
-  heart_disease:     {type: int, nullable: false, allowed: [0, 1]}
-  avg_glucose_level: {type: float, nullable: false, min: 0}
-  bmi:               {type: float, nullable: false, min: 10, max: 100}
-  smoking_status:    {type: str, nullable: false}
-  stroke:            {type: int, nullable: false, allowed: [0, 1]}
-  # add the remaining columns (gender, residence type, etc.)
+  id:                {type: int,   nullable: false}
+  gender:            {type: str,   nullable: false, allowed: [Male, Female, Other]}
+  age:               {type: float, nullable: false, min: 0.08, max: 82}
+  hypertension:      {type: int,   nullable: false, allowed: [0, 1]}
+  heart_disease:     {type: int,   nullable: false, allowed: [0, 1]}
+  ever_married:      {type: str,   nullable: false, allowed: ["Yes", "No"]}
+  work_type:         {type: str,   nullable: false}
+  Residence_type:    {type: str,   nullable: false, allowed: [Urban, Rural]}
+  avg_glucose_level: {type: float, nullable: false, min: 55, max: 272}
+  bmi:               {type: float, nullable: true,  min: 10, max: 98}   # 201 nulls, imputed in staging
+  smoking_status:    {type: str,   nullable: false, allowed: [never smoked, formerly smoked, smokes, Unknown]}
+  stroke:            {type: int,   nullable: false, allowed: [0, 1]}
 on_violation:
-  schema: fail
-  row_level_invalid: quarantine
-  out_of_range: quarantine
+  schema: fail            # missing column or wrong type
   null_target: fail
+  duplicate_key: fail
+  out_of_range: quarantine
+  bmi_null: warn          # expected, handled in staging
