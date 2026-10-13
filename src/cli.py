@@ -1,5 +1,9 @@
 from __future__ import annotations
-import argparse, logging, sys
+
+import argparse
+import logging
+import sys
+
 from src.config import ROOT
 
 
@@ -16,6 +20,7 @@ def _logging():
 def main() -> int:
     p = argparse.ArgumentParser(prog="pipeline")
     sub = p.add_subparsers(dest="cmd", required=True)
+
     i = sub.add_parser("ingest")
     i.add_argument("--force", action="store_true", help="full refresh")
     i.add_argument("--fail-after", type=int, help="simulate a crash after batch N")
@@ -25,6 +30,11 @@ def main() -> int:
     ld = sub.add_parser("load")
     ld.add_argument("--run-id", help="reuse a run id (e.g. on retry)")
     sub.add_parser("verify-db")
+    bm = sub.add_parser("benchmark")
+    bm.add_argument("--repeats", type=int, help="warm repeats per measurement (default from settings)")
+    bm.add_argument("--scale", type=int, default=1, help="replicate rows N times (timing experiment only)")
+    pt = sub.add_parser("partition")
+    pt.add_argument("--value", type=int, default=2, help="partition value to load and verify")
     a = p.parse_args()
 
     _logging()
@@ -47,6 +57,13 @@ def main() -> int:
         elif a.cmd == "verify-db":
             from src import storage
             storage.verify_db()
+        elif a.cmd == "benchmark":
+            from src import benchmark
+            benchmark.run_benchmark(repeats=a.repeats, scale=a.scale)
+        elif a.cmd == "partition":
+            from src import benchmark
+            benchmark.write_partitions(benchmark.load_curated())
+            logging.getLogger("cli").info("partition check: %s", benchmark.verify_partition(a.value))
     except Exception as e:
         logging.getLogger("cli").error("FAILED: %s", e)
         return 1

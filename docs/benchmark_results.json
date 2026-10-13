@@ -1,0 +1,146 @@
+{
+  "environment": {
+    "python": "3.12.4",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "pandas": "3.0.6",
+    "pyarrow": "26.0.0",
+    "run_at_utc": "2026-10-13T07:22:58+00:00"
+  },
+  "rows": 3265,
+  "scale_factor": 1,
+  "repeats": 5,
+  "timing_policy": "1 cold run reported separately; median of 5 warm runs",
+  "formats": {
+    "csv": {
+      "size_bytes": 617466,
+      "write": {
+        "cold_s": 0.03139820008073002,
+        "median_s": 0.02760250004939735,
+        "min_s": 0.02648070000577718,
+        "max_s": 0.03313210001215339,
+        "warm_runs": 5
+      },
+      "read_full": {
+        "cold_s": 0.017972299945540726,
+        "median_s": 0.017015799996443093,
+        "min_s": 0.016203599981963634,
+        "max_s": 0.018000099924392998,
+        "warm_runs": 5
+      }
+    },
+    "jsonl": {
+      "size_bytes": 1814734,
+      "write": {
+        "cold_s": 0.026152299949899316,
+        "median_s": 0.025652199983596802,
+        "min_s": 0.024614900001324713,
+        "max_s": 0.02997879998292774,
+        "warm_runs": 5
+      },
+      "read_full": {
+        "cold_s": 0.05133199994452298,
+        "median_s": 0.050043500028550625,
+        "min_s": 0.04919389996211976,
+        "max_s": 0.05699299997650087,
+        "warm_runs": 5
+      }
+    },
+    "parquet": {
+      "size_bytes": 333247,
+      "write": {
+        "cold_s": 0.027792999986559153,
+        "median_s": 0.011166499927639961,
+        "min_s": 0.011100400006398559,
+        "max_s": 0.012887199991382658,
+        "warm_runs": 5
+      },
+      "read_full": {
+        "cold_s": 0.0046181000070646405,
+        "median_s": 0.004079899983480573,
+        "min_s": 0.0038731000386178493,
+        "max_s": 0.004330500029027462,
+        "warm_runs": 5
+      }
+    },
+    "postgres": {
+      "size_bytes": 1032192,
+      "write": {
+        "cold_s": 1.6104492999147624,
+        "median_s": 1.3591548999538645,
+        "min_s": 1.265016600023955,
+        "max_s": 1.4471785000059754,
+        "warm_runs": 5
+      },
+      "read_full": {
+        "cold_s": 0.03016239998396486,
+        "median_s": 0.03131490002851933,
+        "min_s": 0.028804800007492304,
+        "max_s": 0.03329499997198582,
+        "warm_runs": 5
+      }
+    }
+  },
+  "selective": {
+    "filter": "glucose_score_risk = 2",
+    "expected_rows": 412,
+    "timings": {
+      "csv_read_all_then_filter": {
+        "cold_s": 0.023606700007803738,
+        "median_s": 0.024797299993224442,
+        "min_s": 0.02071289997547865,
+        "max_s": 0.027491700020618737,
+        "warm_runs": 5
+      },
+      "jsonl_read_all_then_filter": {
+        "cold_s": 0.07469320006202906,
+        "median_s": 0.06682129995897412,
+        "min_s": 0.06389620003756136,
+        "max_s": 0.06978240003809333,
+        "warm_runs": 5
+      },
+      "parquet_filter_pushdown": {
+        "cold_s": 0.01685170002747327,
+        "median_s": 0.004971000016666949,
+        "min_s": 0.00445380003657192,
+        "max_s": 0.008622099994681776,
+        "warm_runs": 5
+      },
+      "parquet_partition_dir_only": {
+        "cold_s": 0.016368099953979254,
+        "median_s": 0.021935699973255396,
+        "min_s": 0.01024799991864711,
+        "max_s": 0.04271320009138435,
+        "warm_runs": 5
+      },
+      "postgres_select_where": {
+        "cold_s": 0.05592140008229762,
+        "median_s": 0.014911800040863454,
+        "min_s": 0.011608200031332672,
+        "max_s": 0.017456499976105988,
+        "warm_runs": 5
+      }
+    }
+  },
+  "postgres_queries": {
+    "full_table_scan": {
+      "cold_ms": 1.197,
+      "median_ms": 0.463
+    },
+    "selective_filter": {
+      "cold_ms": 0.201,
+      "median_ms": 0.201
+    },
+    "aggregate_group_by": {
+      "cold_ms": 1.978,
+      "median_ms": 1.018
+    }
+  },
+  "partitions": {
+    "column": "glucose_score_risk",
+    "row_counts": {
+      "0": 2555,
+      "1": 298,
+      "2": 412
+    }
+  }
+}

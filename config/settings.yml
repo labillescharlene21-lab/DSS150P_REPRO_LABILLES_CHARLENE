@@ -29,3 +29,9 @@ modeling:
 transform:
   age_min: 35
   age_max: 90
+
+storage:
+  partition_column: glucose_score_risk   # pedagogical partition: dataset has no date/region field
+  benchmark_repeats: 5
+  formats_dir: data/curated/formats
+  partition_dir: data/partitioned/stroke_curated
