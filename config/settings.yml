@@ -1,6 +1,5 @@
 project: dss150p_repro
 dataset_id: stroke_prediction_risk
-
 paths:
   source_dir: data/source
   raw_dir: data/raw
@@ -11,25 +10,32 @@ paths:
   outputs_dir: outputs
   state_dir: state
   logs_dir: logs
-
 source:
   filename: Stroke_Prediction_Dataset.csv
   target: stroke
   key: id
-
 ingestion:
   n_batches: 3
-
-modeling:
-  random_seed: 42
-  test_size: 0.20
-  stratify: false
-  tolerance: 0.001
-
 transform:
   age_min: 35
   age_max: 90
-
+modeling:
+  random_seed: 42
+  test_size: 0.20
+  stratify: false                  # baseline split was NOT stratified
+  weight_split_test_size: 0.30     # baseline computed scale_pos_weight on an earlier stratified 0.30 split
+  tolerance: 0.001
+  thresholds: [0.05, 0.075, 0.20, 0.35, 0.40, 0.45, 0.50]
+  features: [age, age_score_risk, avg_glucose_level, glucose_score_risk, bmi, bmi_score_risk,
+             hypertension, heart_disease, gender_score_risk, smoking_score_risk,
+             residence_score_risk, VAAF, TGI]
+xgboost:
+  n_estimators: 250
+  learning_rate: 0.02
+  max_depth: 2
+  subsample: 0.7
+  colsample_bytree: 0.7
+  eval_metric: logloss
 storage:
   partition_column: glucose_score_risk   # pedagogical partition: dataset has no date/region field
   benchmark_repeats: 5

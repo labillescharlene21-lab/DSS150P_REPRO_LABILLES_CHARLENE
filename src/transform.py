@@ -123,7 +123,7 @@ def transform_frame(raw: pd.DataFrame, run_id: str):
     good = typed.loc[~bad].copy()
     good[INT_COLS] = good[INT_COLS].astype(int)
 
-    dup = good["id"].duplicated(keep="first")
+    dup = good["id"].duplicated(keep="first")        # key uniqueness (contract: fail-level in validate step)
     if dup.any():
         raise RuntimeError(f"{int(dup.sum())} duplicate ids in raw layer")
 
@@ -134,7 +134,7 @@ def transform_frame(raw: pd.DataFrame, run_id: str):
     staging["processed_at_utc"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     keep = ["source_row_seq", "record_hash"] + [c for c in raw.columns
             if c not in ("source_row_seq", "record_hash", "pipeline_run_id", "ingested_at_utc",
-                         "source_file", "source_checksum", "batch_no")]
+                         "source_file", "source_checksum", "batch_no")] 
     keep = list(dict.fromkeys(keep)) + ["pipeline_run_id", "processed_at_utc"]
     staging = staging[keep].sort_values("source_row_seq").reset_index(drop=True)
     return staging, rejected, stats
@@ -191,10 +191,11 @@ def curate_frame(staging: pd.DataFrame, run_id: str) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------- file wrappers
-def run_transform(run_id: str | None = None) -> dict:
+def run_staging(run_id: str | None = None) -> dict:
+    """raw batches -> staging (typed, cleaned, scoped) + quarantine."""
     s = load_settings()
     run_id = run_id or uuid.uuid4().hex[:12]
-    for key in ("staging_dir", "curated_dir", "quarantine_dir"):
+    for key in ("staging_dir", "quarantine_dir"):
         s.path(key).mkdir(parents=True, exist_ok=True)
 
     raw = load_raw(s.path("raw_dir"))
@@ -206,11 +207,28 @@ def run_transform(run_id: str | None = None) -> dict:
         rejected.to_csv(reject_path, index=False, encoding="utf-8")
     else:
         reject_path.unlink(missing_ok=True)          # no stale rejects from older runs
+    log.info("run=%s staging %s", run_id, stats)
+    return stats
 
-    staging_typed = pd.read_csv(s.path("staging_dir") / STAGING_FILE)
-    curated = curate_frame(staging_typed, run_id)
+
+def run_curated(run_id: str | None = None) -> dict:
+    """staging -> curated (score columns, VAAF, TGI), ordered by source_row_seq."""
+    s = load_settings()
+    run_id = run_id or uuid.uuid4().hex[:12]
+    s.path("curated_dir").mkdir(parents=True, exist_ok=True)
+    staging_path = s.path("staging_dir") / STAGING_FILE
+    if not staging_path.exists():
+        raise FileNotFoundError(f"{staging_path} not found. Run the staging step first.")
+    curated = curate_frame(pd.read_csv(staging_path), run_id)
     curated.to_csv(s.path("curated_dir") / CURATED_FILE, index=False, encoding="utf-8")
-    stats["curated_rows"] = len(curated)
+    stats = {"curated_rows": len(curated)}
+    log.info("run=%s curated %s", run_id, stats)
+    return stats
 
-    log.info("run=%s %s", run_id, stats)
+
+def run_transform(run_id: str | None = None) -> dict:
+    """Both steps, same run id (convenience for the CLI and local runs)."""
+    run_id = run_id or uuid.uuid4().hex[:12]
+    stats = run_staging(run_id)
+    stats.update(run_curated(run_id))
     return stats

@@ -1,0 +1,29 @@
+{
+  "method": "sklearn.model_selection.train_test_split",
+  "random_state": 42,
+  "test_size": 0.2,
+  "stratify": false,
+  "scale_pos_weight": 12.2849,
+  "scale_pos_weight_origin": "stratified 0.3 split, train neg/pos ratio",
+  "train_rows": 2612,
+  "test_rows": 653,
+  "test_positive": 63,
+  "train_ids_sha256": "76114297b55cb63d1de647d007f453f9776dc1e4ec79104aedefc0a837f9fff8",
+  "test_ids_sha256": "65394bd0562ee1b829e8b7d36b637fd56ca009b92a35291cdb848416bd576832",
+  "train_test_overlap": 0,
+  "features": [
+    "age",
+    "age_score_risk",
+    "avg_glucose_level",
+    "glucose_score_risk",
+    "bmi",
+    "bmi_score_risk",
+    "hypertension",
+    "heart_disease",
+    "gender_score_risk",
+    "smoking_score_risk",
+    "residence_score_risk",
+    "VAAF",
+    "TGI"
+  ]
+}
