@@ -21,6 +21,10 @@ def main() -> int:
     i.add_argument("--fail-after", type=int, help="simulate a crash after batch N")
     sub.add_parser("verify-raw")
     sub.add_parser("transform")
+    sub.add_parser("init-db")
+    ld = sub.add_parser("load")
+    ld.add_argument("--run-id", help="reuse a run id (e.g. on retry)")
+    sub.add_parser("verify-db")
     a = p.parse_args()
 
     _logging()
@@ -34,6 +38,15 @@ def main() -> int:
         elif a.cmd == "transform":
             from src import transform
             transform.run_transform()
+        elif a.cmd == "init-db":
+            from src import storage
+            storage.init_db()
+        elif a.cmd == "load":
+            from src import storage
+            storage.load_postgres(run_id=a.run_id)
+        elif a.cmd == "verify-db":
+            from src import storage
+            storage.verify_db()
     except Exception as e:
         logging.getLogger("cli").error("FAILED: %s", e)
         return 1

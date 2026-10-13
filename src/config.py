@@ -30,3 +30,12 @@ def load_settings(path: Path | None = None) -> Settings:
     path = path or ROOT / "config" / "settings.yml"
     with open(path, "r", encoding="utf-8") as f:
         return Settings(yaml.safe_load(f))
+
+def db_url() -> str:
+    """Postgres URL from environment variables (never hard-coded)."""
+    user = os.environ["POSTGRES_USER"]
+    pwd = os.environ["POSTGRES_PASSWORD"]
+    host = os.getenv("POSTGRES_HOST", "localhost")
+    port = os.getenv("POSTGRES_PORT", "5432")
+    db = os.environ["POSTGRES_DB"]
+    return f"postgresql+psycopg2://{user}:{pwd}@{host}:{port}/{db}"
