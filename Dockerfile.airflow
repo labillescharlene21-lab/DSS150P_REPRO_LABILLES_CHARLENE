@@ -1,0 +1,10 @@
+FROM apache/airflow:3.3.1-python3.12
+
+# The pipeline runs in its own virtualenv so its pinned packages (pandas, xgboost, ...)
+# never clash with Airflow's own dependency set.
+COPY --chown=airflow:root requirements.txt /tmp/pipeline-requirements.txt
+RUN python -m venv /home/airflow/pipeline-venv \
+ && /home/airflow/pipeline-venv/bin/pip install --no-cache-dir -r /tmp/pipeline-requirements.txt
+
+ENV PIPELINE_PYTHON=/home/airflow/pipeline-venv/bin/python \
+    PIPELINE_PROJECT_DIR=/opt/pipeline

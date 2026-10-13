@@ -20,11 +20,11 @@ services:
     build: .
     env_file: .env
     environment:
-      POSTGRES_HOST: postgres      # inside Docker the DB host is the service name
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: "5432"
     depends_on:
       postgres:
-        condition: service_healthy # the pipeline never races an unready database
+        condition: service_healthy
     volumes:
       - ./data:/app/data
       - ./state:/app/state
@@ -33,5 +33,27 @@ services:
       - ./metadata:/app/metadata
     command: ["python", "-m", "src.cli", "--help"]
 
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    command: ["airflow", "standalone"]
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "true"
+    ports:
+      - "127.0.0.1:8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - .:/opt/pipeline
+      - airflow_home:/opt/airflow
+
 volumes:
   pgdata:
+  airflow_home:
